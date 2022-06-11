@@ -1,3 +1,4 @@
+from flasgger import swag_from
 from flask import Blueprint, request, jsonify
 import validators
 from .constants.http_status_codes import HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT, HTTP_201_CREATED, \
@@ -140,3 +141,22 @@ def delete_bookmark(id):
     db.session.delete(bookmark)
     db.session.commit()
     return jsonify({}), HTTP_204_NO_CONTENT
+
+
+@bookmarks.get("/stats")
+@jwt_required()
+@swag_from('./docs/bookmarks/stats.yaml')
+def get_stats():
+    current_user = get_jwt_identity()
+    data = []
+    items = Bookmark.query.filter_by(user_id=current_user).all()
+
+    for item in items:
+        new_link = {
+            'visits': item.visits,
+            'url': item.url,
+            'id': item.id,
+            'short_url': item.short_url,
+        }
+        data.append(new_link)
+    return jsonify({'data': data}), HTTP_200_OK
